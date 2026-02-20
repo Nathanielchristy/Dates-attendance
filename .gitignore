@@ -1,0 +1,4 @@
+supabase-setup.sql
+node_modules
+.env
+.env.example
