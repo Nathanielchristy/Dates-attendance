@@ -7,12 +7,22 @@ import {
   hashPassword,
 } from '../lib/security'
 
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768)
+  useEffect(() => {
+    const fn = () => setIsMobile(window.innerWidth < 768)
+    window.addEventListener('resize', fn)
+    return () => window.removeEventListener('resize', fn)
+  }, [])
+  return isMobile
+}
+
 const NAV = [
-  { id: 'today',     icon: '📊', label: "Today's Overview" },
-  { id: 'weekly',    icon: '📅', label: 'Weekly Report' },
-  { id: 'monthly',   icon: '📆', label: 'Monthly Report' },
-  { id: 'employees', icon: '👥', label: 'Employees' },
-  { id: 'add',       icon: '➕', label: 'Add Employee' },
+  { id: 'today',     icon: '📊', label: "Today" },
+  { id: 'weekly',    icon: '📅', label: 'Weekly' },
+  { id: 'monthly',   icon: '📆', label: 'Monthly' },
+  { id: 'employees', icon: '👥', label: 'Staff' },
+  { id: 'add',       icon: '➕', label: 'Add' },
 ]
 
 export default function AdminPage() {
@@ -32,6 +42,7 @@ export default function AdminPage() {
 function TodayPage() {
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(true)
+  const isMobile = useIsMobile()
 
   const load = async () => {
     setLoading(true)
@@ -58,17 +69,18 @@ function TodayPage() {
       <h1 style={S.h1} className="fade-up">Today's Overview</h1>
       <p style={S.sub} className="fade-up fade-up-delay-1">{today}</p>
 
-      <div style={{display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:16, marginBottom:28}} className="fade-up fade-up-delay-2">
+      {/* 2x2 on mobile, 4 across on desktop */}
+      <div style={{display:'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)', gap:12, marginBottom:20}} className="fade-up fade-up-delay-2">
         {[
-          { icon:'👥', label:'Total',    val: data.length,  color:'var(--text)' },
-          { icon:'✅', label:'Present',  val: present,       color:'var(--success)' },
-          { icon:'❌', label:'Absent',   val: absent,        color:'var(--error)' },
-          { icon:'⏳', label:'Still In', val: pending,       color:'var(--warning)' },
+          { icon:'👥', label:'Total',    val: data.length, color:'var(--text)' },
+          { icon:'✅', label:'Present',  val: present,      color:'var(--success)' },
+          { icon:'❌', label:'Absent',   val: absent,       color:'var(--error)' },
+          { icon:'⏳', label:'Still In', val: pending,      color:'var(--warning)' },
         ].map(s => (
           <div key={s.label} style={S.statCard}>
-            <div style={{fontSize:22, marginBottom:8}}>{s.icon}</div>
+            <div style={{fontSize:20, marginBottom:6}}>{s.icon}</div>
             <div style={S.statLabel}>{s.label}</div>
-            <div style={{...S.statVal, color: s.color}}>{loading ? '—' : s.val}</div>
+            <div style={{...S.statVal, color:s.color}}>{loading ? '—' : s.val}</div>
           </div>
         ))}
       </div>
@@ -81,18 +93,18 @@ function TodayPage() {
         {loading ? (
           <div style={S.center}><span className="spinner" /></div>
         ) : (
-          <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(190px, 1fr))', gap:12, padding:20}}>
+          <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(160px, 1fr))', gap:10, padding:16}}>
             {data.map(e => {
               const a = e.att
-              let status = 'absent', color = 'var(--error)', bg = 'var(--error-bg)', label = 'Absent', timeInfo = 'Not clocked in'
-              if (a?.time_out)  { status='complete';   color='var(--success)'; bg='var(--success-bg)'; label='Complete';   timeInfo=`${fmtTime(a.time_in)} → ${fmtTime(a.time_out)} · ${(+a.total_hours).toFixed(1)}h` }
-              else if (a?.time_in){ status='in';        color='var(--warning)'; bg='var(--warning-bg)'; label='Clocked In'; timeInfo=`In: ${fmtTime(a.time_in)}` }
+              let color='var(--error)', bg='var(--error-bg)', label='Absent', timeInfo='Not clocked in'
+              if (a?.time_out)   { color='var(--success)'; bg='var(--success-bg)'; label='Complete';   timeInfo=`${fmtTime(a.time_in)} → ${fmtTime(a.time_out)} · ${(+a.total_hours).toFixed(1)}h` }
+              else if (a?.time_in){ color='var(--warning)'; bg='var(--warning-bg)'; label='Clocked In'; timeInfo=`In: ${fmtTime(a.time_in)}` }
               return (
-                <div key={e.id} style={{background:'#0a1020', border:'1px solid var(--border)', borderRadius:12, padding:16}}>
-                  <div style={{fontWeight:600, fontSize:14, marginBottom:3}}>{e.name}</div>
-                  <div style={{fontSize:12, color:'var(--text-muted)', marginBottom:10}}>{e.department}</div>
-                  <span style={{background:bg, color, padding:'3px 10px', borderRadius:20, fontSize:11, fontWeight:700}}>{label}</span>
-                  <div style={{fontSize:12, color:'var(--text-muted)', marginTop:8}}>{timeInfo}</div>
+                <div key={e.id} style={{background:'#0a1020', border:'1px solid var(--border)', borderRadius:12, padding:14}}>
+                  <div style={{fontWeight:600, fontSize:13, marginBottom:2}}>{e.name}</div>
+                  <div style={{fontSize:11, color:'var(--text-muted)', marginBottom:8}}>{e.department}</div>
+                  <span style={{background:bg, color, padding:'2px 9px', borderRadius:20, fontSize:11, fontWeight:700}}>{label}</span>
+                  <div style={{fontSize:11, color:'var(--text-muted)', marginTop:7, lineHeight:1.5}}>{timeInfo}</div>
                 </div>
               )
             })}
@@ -106,9 +118,10 @@ function TodayPage() {
 // ─── WEEKLY ───────────────────────────────────────────────────────────────────
 function WeeklyPage() {
   const [weekOffset, setWeekOffset] = useState(0)
-  const [rows, setRows] = useState([])
+  const [rows, setRows]   = useState([])
   const [range, setRange] = useState({ start:'', end:'' })
   const [loading, setLoading] = useState(true)
+  const isMobile = useIsMobile()
 
   const load = async (offset) => {
     setLoading(true)
@@ -120,13 +133,9 @@ function WeeklyPage() {
     const start = monday.toISOString().split('T')[0]
     const end   = sunday.toISOString().split('T')[0]
     setRange({ start, end })
-
     const { data: att } = await supabase
-      .from('attendance')
-      .select('*, employees(name, department)')
-      .gte('date', start)
-      .lte('date', end)
-      .order('date')
+      .from('attendance').select('*, employees(name, department)')
+      .gte('date', start).lte('date', end).order('date')
     setRows(att || [])
     setLoading(false)
   }
@@ -134,8 +143,8 @@ function WeeklyPage() {
   useEffect(() => { load(weekOffset) }, [weekOffset])
 
   const fmtRange = (s, e) => {
-    const fmt = d => new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month:'short', day:'numeric' })
-    const year = new Date(e + 'T12:00:00').getFullYear()
+    const fmt = d => new Date(d+'T12:00:00').toLocaleDateString('en-US', { month:'short', day:'numeric' })
+    const year = new Date(e+'T12:00:00').getFullYear()
     return `${fmt(s)} – ${fmt(e)}, ${year}`
   }
 
@@ -144,44 +153,74 @@ function WeeklyPage() {
       <h1 style={S.h1} className="fade-up">Weekly Report</h1>
       <p style={S.sub} className="fade-up fade-up-delay-1">Attendance breakdown by week</p>
 
-      <div style={{display:'flex', alignItems:'center', gap:12, marginBottom:20, flexWrap:'wrap'}} className="fade-up fade-up-delay-2">
+      <div style={{display:'flex', alignItems:'center', gap:8, marginBottom:16, flexWrap:'wrap'}} className="fade-up fade-up-delay-2">
         <button style={S.weekBtn} onClick={() => setWeekOffset(w => w - 1)}>← Prev</button>
-        <span style={{color:'var(--text-dim)', fontSize:14, minWidth:200, textAlign:'center'}}>
+        <span style={{color:'var(--text-dim)', fontSize:13, flex:1, textAlign:'center', minWidth:140}}>
           {range.start ? fmtRange(range.start, range.end) : '...'}
         </span>
         <button style={S.weekBtn} onClick={() => setWeekOffset(w => w + 1)}>Next →</button>
-        {weekOffset !== 0 && <button style={{...S.weekBtn, color:'var(--accent-bright)'}} onClick={() => setWeekOffset(0)}>This Week</button>}
+        {weekOffset !== 0 && <button style={{...S.weekBtn, color:'var(--accent-bright)', width:'100%'}} onClick={() => setWeekOffset(0)}>This Week</button>}
       </div>
 
       <div style={S.card} className="fade-up fade-up-delay-3">
         {loading ? <div style={S.center}><span className="spinner" /></div> :
-          rows.length === 0 ? <div style={S.empty}>No attendance records for this week.</div> : (
-          <div style={{overflowX:'auto'}}>
-            <table style={S.table}>
-              <thead><tr>{['Employee','Department','Date','Time In','Time Out','Hours','Status'].map(h => <th key={h} style={S.th}>{h}</th>)}</tr></thead>
-              <tbody>
-                {rows.map(r => {
-                  const complete = !!r.time_out
-                  const inProg   = r.time_in && !r.time_out
-                  const badge    = complete ? {bg:'var(--success-bg)',c:'var(--success)',l:'Complete'} :
-                                   inProg   ? {bg:'var(--warning-bg)',c:'var(--warning)',l:'In Progress'} :
-                                              {bg:'var(--error-bg)',  c:'var(--error)',  l:'Absent'}
-                  return (
-                    <tr key={r.id} style={S.tr}>
-                      <td style={{...S.td, fontWeight:600}}>{r.employees?.name}</td>
-                      <td style={S.td}>{r.employees?.department || '—'}</td>
-                      <td style={S.td}>{fmtDate(r.date)}</td>
-                      <td style={S.td}>{r.time_in ? fmtTime(r.time_in) : '—'}</td>
-                      <td style={S.td}>{r.time_out ? fmtTime(r.time_out) : '—'}</td>
-                      <td style={S.td}>{r.total_hours ? `${(+r.total_hours).toFixed(1)}h` : '—'}</td>
-                      <td style={S.td}><span style={{background:badge.bg, color:badge.c, padding:'3px 10px', borderRadius:20, fontSize:11, fontWeight:700}}>{badge.l}</span></td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
+          rows.length === 0 ? <div style={S.empty}>No records for this week.</div> :
+          isMobile ? (
+            // Mobile: stacked cards
+            <div>
+              {rows.map(r => {
+                const complete = !!r.time_out
+                const inProg   = r.time_in && !r.time_out
+                const badge    = complete ? {bg:'var(--success-bg)',c:'var(--success)',l:'Complete'} :
+                                 inProg   ? {bg:'var(--warning-bg)',c:'var(--warning)',l:'In Progress'} :
+                                            {bg:'var(--error-bg)',  c:'var(--error)',  l:'Absent'}
+                return (
+                  <div key={r.id} style={S.mobileRow}>
+                    <div style={S.mobileRowTop}>
+                      <div>
+                        <div style={{fontWeight:600, fontSize:14}}>{r.employees?.name}</div>
+                        <div style={{fontSize:11, color:'var(--text-muted)'}}>{r.employees?.department} · {fmtDate(r.date)}</div>
+                      </div>
+                      <span style={{background:badge.bg, color:badge.c, padding:'3px 9px', borderRadius:20, fontSize:11, fontWeight:700, flexShrink:0}}>{badge.l}</span>
+                    </div>
+                    <div style={S.mobileRowBottom}>
+                      <span>In: <strong>{r.time_in ? fmtTime(r.time_in) : '—'}</strong></span>
+                      <span>Out: <strong>{r.time_out ? fmtTime(r.time_out) : '—'}</strong></span>
+                      <span>Hours: <strong>{r.total_hours ? `${(+r.total_hours).toFixed(1)}h` : '—'}</strong></span>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          ) : (
+            // Desktop: table
+            <div style={{overflowX:'auto'}}>
+              <table style={S.table}>
+                <thead><tr>{['Employee','Department','Date','Time In','Time Out','Hours','Status'].map(h=><th key={h} style={S.th}>{h}</th>)}</tr></thead>
+                <tbody>
+                  {rows.map(r => {
+                    const complete = !!r.time_out
+                    const inProg   = r.time_in && !r.time_out
+                    const badge    = complete ? {bg:'var(--success-bg)',c:'var(--success)',l:'Complete'} :
+                                     inProg   ? {bg:'var(--warning-bg)',c:'var(--warning)',l:'In Progress'} :
+                                                {bg:'var(--error-bg)',  c:'var(--error)',  l:'Absent'}
+                    return (
+                      <tr key={r.id} style={S.tr}>
+                        <td style={{...S.td, fontWeight:600}}>{r.employees?.name}</td>
+                        <td style={S.td}>{r.employees?.department || '—'}</td>
+                        <td style={S.td}>{fmtDate(r.date)}</td>
+                        <td style={S.td}>{r.time_in ? fmtTime(r.time_in) : '—'}</td>
+                        <td style={S.td}>{r.time_out ? fmtTime(r.time_out) : '—'}</td>
+                        <td style={S.td}>{r.total_hours ? `${(+r.total_hours).toFixed(1)}h` : '—'}</td>
+                        <td style={S.td}><span style={{background:badge.bg, color:badge.c, padding:'3px 10px', borderRadius:20, fontSize:11, fontWeight:700}}>{badge.l}</span></td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )
+        }
       </div>
     </div>
   )
@@ -194,25 +233,24 @@ function MonthlyPage() {
   const [year, setYear]   = useState(now.getFullYear())
   const [rows, setRows]   = useState([])
   const [loading, setLoading] = useState(false)
+  const isMobile = useIsMobile()
 
   const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December']
-  const YEARS  = Array.from({ length: 4 }, (_, i) => now.getFullYear() - i)
+  const YEARS  = Array.from({ length:4 }, (_, i) => now.getFullYear() - i)
 
   const load = async () => {
     setLoading(true)
     const start = `${year}-${String(month).padStart(2,'0')}-01`
     const lastDay = new Date(year, month, 0).getDate()
     const end = `${year}-${String(month).padStart(2,'0')}-${lastDay}`
-
     const { data: emps } = await supabase.from('employees').select('id, name, department').order('name')
     const { data: att }  = await supabase.from('attendance').select('employee_id, total_hours, time_in, time_out').gte('date', start).lte('date', end)
-
     const summary = (emps || []).map(e => {
-      const records = (att || []).filter(a => a.employee_id === e.id)
-      const present = records.filter(a => a.time_in).length
-      const totalH  = records.reduce((s, a) => s + (+a.total_hours || 0), 0)
+      const records    = (att || []).filter(a => a.employee_id === e.id)
+      const present    = records.filter(a => a.time_in).length
+      const totalH     = records.reduce((s, a) => s + (+a.total_hours || 0), 0)
       const incomplete = records.filter(a => a.time_in && !a.time_out).length
-      return { ...e, days_present: present, total_hours: totalH, avg_hours: present ? totalH / present : 0, incomplete }
+      return { ...e, days_present: present, total_hours: totalH, avg_hours: present ? totalH/present : 0, incomplete }
     })
     setRows(summary)
     setLoading(false)
@@ -227,55 +265,83 @@ function MonthlyPage() {
       <h1 style={S.h1} className="fade-up">Monthly Report</h1>
       <p style={S.sub} className="fade-up fade-up-delay-1">Monthly attendance summary per employee</p>
 
-      <div style={{display:'flex', gap:12, alignItems:'flex-end', marginBottom:24, flexWrap:'wrap'}} className="fade-up fade-up-delay-2">
-        <div>
+      <div style={{display:'flex', gap:12, alignItems:'flex-end', marginBottom:20, flexWrap:'wrap'}} className="fade-up fade-up-delay-2">
+        <div style={{flex:1, minWidth:130}}>
           <div style={S.selectLabel}>Month</div>
-          <select style={S.select} value={month} onChange={e => setMonth(+e.target.value)}>
-            {MONTHS.map((m, i) => <option key={m} value={i+1}>{m}</option>)}
+          <select style={{...S.select, width:'100%'}} value={month} onChange={e => setMonth(+e.target.value)}>
+            {MONTHS.map((m,i) => <option key={m} value={i+1}>{isMobile ? m.slice(0,3) : m}</option>)}
           </select>
         </div>
-        <div>
+        <div style={{flex:1, minWidth:90}}>
           <div style={S.selectLabel}>Year</div>
-          <select style={S.select} value={year} onChange={e => setYear(+e.target.value)}>
+          <select style={{...S.select, width:'100%'}} value={year} onChange={e => setYear(+e.target.value)}>
             {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
           </select>
         </div>
-        <button style={S.primaryBtn} onClick={load}>Load Report</button>
+        <button style={{...S.primaryBtn, alignSelf:'flex-end'}} onClick={load}>Load</button>
       </div>
 
       <div style={S.card} className="fade-up fade-up-delay-3">
         <div style={S.cardHead}>
-          <h3 style={S.cardTitle}>{MONTHS[month-1]} {year} — Attendance Summary</h3>
+          <h3 style={S.cardTitle}>{MONTHS[month-1]} {year}</h3>
         </div>
         {loading ? <div style={S.center}><span className="spinner" /></div> :
-          rows.length === 0 ? <div style={S.empty}>No data.</div> : (
-          <div style={{overflowX:'auto'}}>
-            <table style={S.table}>
-              <thead><tr>{['Employee','Department','Days Present','Total Hours','Avg Hours/Day','Incomplete'].map(h=><th key={h} style={S.th}>{h}</th>)}</tr></thead>
-              <tbody>
-                {rows.map(r => (
-                  <tr key={r.id} style={S.tr}>
-                    <td style={{...S.td, fontWeight:600}}>{r.name}</td>
-                    <td style={S.td}>{r.department || '—'}</td>
-                    <td style={S.td}>{r.days_present}</td>
-                    <td style={{...S.td, minWidth:160}}>
-                      {r.total_hours.toFixed(1)}h
-                      <div style={{height:5, background:'rgba(37,99,235,0.12)', borderRadius:3, marginTop:6, overflow:'hidden'}}>
-                        <div style={{height:'100%', width:`${(r.total_hours/maxH)*100}%`, background:'var(--accent-bright)', borderRadius:3, transition:'width 0.5s'}} />
-                      </div>
-                    </td>
-                    <td style={S.td}>{r.avg_hours.toFixed(1)}h</td>
-                    <td style={S.td}>
-                      {r.incomplete > 0
-                        ? <span style={{color:'var(--warning)', fontWeight:600}}>{r.incomplete}</span>
-                        : <span style={{color:'var(--text-muted)'}}>0</span>}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+          rows.length === 0 ? <div style={S.empty}>No data for this period.</div> :
+          isMobile ? (
+            // Mobile: summary cards
+            <div>
+              {rows.map(r => (
+                <div key={r.id} style={S.mobileRow}>
+                  <div style={S.mobileRowTop}>
+                    <div>
+                      <div style={{fontWeight:600, fontSize:14}}>{r.name}</div>
+                      <div style={{fontSize:11, color:'var(--text-muted)'}}>{r.department || '—'}</div>
+                    </div>
+                    <div style={{textAlign:'right'}}>
+                      <div style={{fontFamily:'Syne, sans-serif', fontSize:18, fontWeight:700}}>{r.total_hours.toFixed(1)}h</div>
+                      <div style={{fontSize:11, color:'var(--text-muted)'}}>{r.days_present} days</div>
+                    </div>
+                  </div>
+                  <div style={{height:4, background:'rgba(37,99,235,0.12)', borderRadius:3, marginTop:10, overflow:'hidden'}}>
+                    <div style={{height:'100%', width:`${(r.total_hours/maxH)*100}%`, background:'var(--accent-bright)', borderRadius:3}} />
+                  </div>
+                  <div style={{...S.mobileRowBottom, marginTop:8}}>
+                    <span>Avg: <strong>{r.avg_hours.toFixed(1)}h/day</strong></span>
+                    {r.incomplete > 0 && <span style={{color:'var(--warning)'}}>⚠ {r.incomplete} incomplete</span>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            // Desktop: table
+            <div style={{overflowX:'auto'}}>
+              <table style={S.table}>
+                <thead><tr>{['Employee','Department','Days Present','Total Hours','Avg Hours/Day','Incomplete'].map(h=><th key={h} style={S.th}>{h}</th>)}</tr></thead>
+                <tbody>
+                  {rows.map(r => (
+                    <tr key={r.id} style={S.tr}>
+                      <td style={{...S.td, fontWeight:600}}>{r.name}</td>
+                      <td style={S.td}>{r.department || '—'}</td>
+                      <td style={S.td}>{r.days_present}</td>
+                      <td style={{...S.td, minWidth:150}}>
+                        {r.total_hours.toFixed(1)}h
+                        <div style={{height:5, background:'rgba(37,99,235,0.12)', borderRadius:3, marginTop:6, overflow:'hidden'}}>
+                          <div style={{height:'100%', width:`${(r.total_hours/maxH)*100}%`, background:'var(--accent-bright)', borderRadius:3, transition:'width 0.5s'}} />
+                        </div>
+                      </td>
+                      <td style={S.td}>{r.avg_hours.toFixed(1)}h</td>
+                      <td style={S.td}>
+                        {r.incomplete > 0
+                          ? <span style={{color:'var(--warning)', fontWeight:600}}>{r.incomplete}</span>
+                          : <span style={{color:'var(--text-muted)'}}>0</span>}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )
+        }
       </div>
     </div>
   )
@@ -283,9 +349,10 @@ function MonthlyPage() {
 
 // ─── EMPLOYEES LIST ───────────────────────────────────────────────────────────
 function EmployeesPage() {
-  const [emps, setEmps] = useState([])
+  const [emps, setEmps]   = useState([])
   const [loading, setLoading] = useState(true)
-  const [modal, setModal] = useState(null)  // { id, name }
+  const [modal, setModal] = useState(null)
+  const isMobile = useIsMobile()
 
   const load = async () => {
     setLoading(true)
@@ -298,13 +365,11 @@ function EmployeesPage() {
 
   const deleteEmp = async () => {
     await supabase.from('employees').delete().eq('id', modal.id)
-    setModal(null)
-    load()
+    setModal(null); load()
   }
 
   return (
     <div>
-      {/* Custom confirm modal */}
       {modal && (
         <div style={S.modalOverlay} onClick={() => setModal(null)}>
           <div style={S.modalBox} onClick={e => e.stopPropagation()}>
@@ -323,24 +388,41 @@ function EmployeesPage() {
 
       <div style={S.card} className="fade-up fade-up-delay-2">
         {loading ? <div style={S.center}><span className="spinner" /></div> :
-          emps.length === 0 ? <div style={S.empty}>No employees yet. Add one!</div> : (
-          <table style={S.table}>
-            <thead><tr>{['Name','Department','Username','Joined','Actions'].map(h=><th key={h} style={S.th}>{h}</th>)}</tr></thead>
-            <tbody>
+          emps.length === 0 ? <div style={S.empty}>No employees yet. Add one!</div> :
+          isMobile ? (
+            // Mobile: stacked employee cards
+            <div>
               {emps.map(e => (
-                <tr key={e.id} style={S.tr}>
-                  <td style={{...S.td, fontWeight:600}}>{e.name}</td>
-                  <td style={S.td}>{e.department || '—'}</td>
-                  <td style={{...S.td, fontFamily:'monospace', fontSize:13}}>{e.username}</td>
-                  <td style={S.td}>{e.created_at ? new Date(e.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—'}</td>
-                  <td style={S.td}>
-                    <button style={S.dangerBtn} onClick={() => setModal({ id: e.id, name: e.name })}>Delete</button>
-                  </td>
-                </tr>
+                <div key={e.id} style={{...S.mobileRow, display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+                  <div>
+                    <div style={{fontWeight:600, fontSize:14}}>{e.name}</div>
+                    <div style={{fontSize:12, color:'var(--text-muted)'}}>{e.department || '—'}</div>
+                    <div style={{fontSize:11, color:'var(--text-muted)', fontFamily:'monospace', marginTop:3}}>@{e.username}</div>
+                  </div>
+                  <button style={S.dangerBtn} onClick={() => setModal({ id:e.id, name:e.name })}>Delete</button>
+                </div>
               ))}
-            </tbody>
-          </table>
-        )}
+            </div>
+          ) : (
+            // Desktop: table
+            <table style={S.table}>
+              <thead><tr>{['Name','Department','Username','Joined','Actions'].map(h=><th key={h} style={S.th}>{h}</th>)}</tr></thead>
+              <tbody>
+                {emps.map(e => (
+                  <tr key={e.id} style={S.tr}>
+                    <td style={{...S.td, fontWeight:600}}>{e.name}</td>
+                    <td style={S.td}>{e.department || '—'}</td>
+                    <td style={{...S.td, fontFamily:'monospace', fontSize:13}}>{e.username}</td>
+                    <td style={S.td}>{e.created_at ? new Date(e.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—'}</td>
+                    <td style={S.td}>
+                      <button style={S.dangerBtn} onClick={() => setModal({ id:e.id, name:e.name })}>Delete</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )
+        }
       </div>
     </div>
   )
@@ -372,6 +454,7 @@ function AddEmployeePage() {
   const [msg, setMsg]       = useState(null)
   const [loading, setLoading] = useState(false)
   const [showPw, setShowPw] = useState(false)
+  const isMobile = useIsMobile()
 
   const strength = pwStrength(form.password)
 
@@ -435,7 +518,7 @@ function AddEmployeePage() {
       <div style={{...S.card, maxWidth:600}} className="fade-up fade-up-delay-2">
         <div style={S.cardHead}><h3 style={S.cardTitle}>Employee Details</h3></div>
         <div style={{padding:24}}>
-          <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:16, marginBottom:16}}>
+          <div style={{display:'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap:16, marginBottom:16}}>
             {fields.map(f => (
               <div key={f.key}>
                 <div style={S.selectLabel}>{f.label}</div>
@@ -501,7 +584,6 @@ function AddEmployeePage() {
           </button>
 
           <div style={{marginTop:16, fontSize:11, color:'var(--text-muted)', lineHeight:1.7}}>
-            🔒 Passwords are hashed with PBKDF2-SHA256 before storage.<br/>
             🛡 Usernames must be lowercase letters, numbers, dots, or hyphens.
           </div>
         </div>
@@ -523,33 +605,37 @@ function fmtDate(d) {
 
 // ─── STYLES ───────────────────────────────────────────────────────────────────
 const S = {
-  h1: { fontFamily:'Syne, sans-serif', fontSize:28, fontWeight:700, letterSpacing:'-0.5px', marginBottom:6 },
-  sub: { color:'var(--text-muted)', fontSize:14, marginBottom:28 },
-  statCard: { background:'var(--card)', border:'1px solid var(--border)', borderRadius:14, padding:'20px 24px' },
+  h1: { fontFamily:'Syne, sans-serif', fontSize:'clamp(20px,5vw,28px)', fontWeight:700, letterSpacing:'-0.5px', marginBottom:6 },
+  sub: { color:'var(--text-muted)', fontSize:14, marginBottom:20 },
+  statCard: { background:'var(--card)', border:'1px solid var(--border)', borderRadius:14, padding:'16px 18px' },
   statLabel: { fontSize:11, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.6px', marginBottom:6, fontWeight:600 },
-  statVal: { fontFamily:'Syne, sans-serif', fontSize:30, fontWeight:700, letterSpacing:'-1px' },
-  card: { background:'var(--card)', border:'1px solid var(--border)', borderRadius:16, overflow:'hidden', marginBottom:24 },
-  cardHead: { padding:'18px 24px', borderBottom:'1px solid var(--border)', display:'flex', justifyContent:'space-between', alignItems:'center' },
+  statVal: { fontFamily:'Syne, sans-serif', fontSize:'clamp(22px,4vw,30px)', fontWeight:700, letterSpacing:'-1px' },
+  card: { background:'var(--card)', border:'1px solid var(--border)', borderRadius:16, overflow:'hidden', marginBottom:20 },
+  cardHead: { padding:'16px 20px', borderBottom:'1px solid var(--border)', display:'flex', justifyContent:'space-between', alignItems:'center' },
   cardTitle: { fontSize:15, fontWeight:600, fontFamily:'Syne, sans-serif' },
-  refreshBtn: { padding:'7px 16px', background:'transparent', border:'1px solid var(--border)', color:'var(--text-dim)', borderRadius:8, cursor:'pointer', fontSize:13, fontFamily:'Instrument Sans, sans-serif' },
+  refreshBtn: { padding:'7px 14px', background:'transparent', border:'1px solid var(--border)', color:'var(--text-dim)', borderRadius:8, cursor:'pointer', fontSize:13, fontFamily:'Instrument Sans, sans-serif' },
   table: { width:'100%', borderCollapse:'collapse' },
   th: { padding:'12px 20px', textAlign:'left', fontSize:11, fontWeight:600, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.6px', borderBottom:'1px solid var(--border)' },
   tr: { borderBottom:'1px solid rgba(26,39,68,0.5)' },
   td: { padding:'13px 20px', fontSize:14 },
   center: { display:'flex', alignItems:'center', justifyContent:'center', padding:56 },
-  empty: { textAlign:'center', padding:56, color:'var(--text-muted)', fontSize:14 },
-  weekBtn: { padding:'8px 18px', background:'var(--surface)', border:'1px solid var(--border)', color:'var(--text)', borderRadius:9, cursor:'pointer', fontSize:14, fontFamily:'Instrument Sans, sans-serif' },
+  empty:  { textAlign:'center', padding:48, color:'var(--text-muted)', fontSize:14 },
+  weekBtn: { padding:'8px 16px', background:'var(--surface)', border:'1px solid var(--border)', color:'var(--text)', borderRadius:9, cursor:'pointer', fontSize:13, fontFamily:'Instrument Sans, sans-serif' },
   selectLabel: { fontSize:11, fontWeight:600, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.7px', marginBottom:7 },
   select: { background:'#090e1a', border:'1px solid var(--border)', color:'var(--text)', padding:'10px 14px', borderRadius:10, fontSize:14, fontFamily:'Instrument Sans, sans-serif', outline:'none', cursor:'pointer' },
-  input: { width:'100%', background:'#090e1a', border:'1px solid var(--border)', color:'var(--text)', padding:'11px 14px', borderRadius:10, fontSize:14, fontFamily:'Instrument Sans, sans-serif', outline:'none', transition:'border-color 0.2s' },
-  primaryBtn: { padding:'11px 24px', background:'linear-gradient(135deg, #2563eb, #1d4ed8)', color:'#fff', border:'none', borderRadius:10, fontSize:14, fontWeight:600, fontFamily:'Syne, sans-serif', cursor:'pointer', display:'flex', alignItems:'center', gap:8, boxShadow:'0 4px 20px rgba(37,99,235,0.3)' },
-  dangerBtn: { padding:'6px 14px', background:'var(--error-bg)', color:'var(--error)', border:'1px solid rgba(239,68,68,0.2)', borderRadius:8, cursor:'pointer', fontSize:12, fontWeight:600, fontFamily:'Instrument Sans, sans-serif' },
+  input:  { width:'100%', background:'#090e1a', border:'1px solid var(--border)', color:'var(--text)', padding:'11px 14px', borderRadius:10, fontSize:14, fontFamily:'Instrument Sans, sans-serif', outline:'none', transition:'border-color 0.2s' },
+  primaryBtn: { padding:'11px 20px', background:'linear-gradient(135deg, #2563eb, #1d4ed8)', color:'#fff', border:'none', borderRadius:10, fontSize:14, fontWeight:600, fontFamily:'Syne, sans-serif', cursor:'pointer', display:'flex', alignItems:'center', gap:8, boxShadow:'0 4px 20px rgba(37,99,235,0.3)', whiteSpace:'nowrap' },
+  dangerBtn: { padding:'6px 14px', background:'var(--error-bg)', color:'var(--error)', border:'1px solid rgba(239,68,68,0.2)', borderRadius:8, cursor:'pointer', fontSize:12, fontWeight:600, fontFamily:'Instrument Sans, sans-serif', flexShrink:0 },
+  // Mobile card rows (used instead of tables on small screens)
+  mobileRow:       { padding:'14px 16px', borderBottom:'1px solid rgba(26,39,68,0.5)' },
+  mobileRowTop:    { display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:8, marginBottom:6 },
+  mobileRowBottom: { display:'flex', gap:14, fontSize:12, color:'var(--text-dim)', flexWrap:'wrap' },
   // Modal
-  modalOverlay: { position:'fixed', inset:0, background:'rgba(0,0,0,0.7)', backdropFilter:'blur(6px)', zIndex:1000, display:'flex', alignItems:'center', justifyContent:'center' },
-  modalBox: { background:'var(--card)', border:'1px solid var(--border)', borderRadius:18, padding:32, width:380, boxShadow:'0 32px 80px rgba(0,0,0,0.6)' },
+  modalOverlay: { position:'fixed', inset:0, background:'rgba(0,0,0,0.7)', backdropFilter:'blur(6px)', zIndex:1000, display:'flex', alignItems:'center', justifyContent:'center', padding:16 },
+  modalBox: { background:'var(--card)', border:'1px solid var(--border)', borderRadius:18, padding:28, width:'100%', maxWidth:380, boxShadow:'0 32px 80px rgba(0,0,0,0.6)' },
   modalTitle: { fontFamily:'Syne, sans-serif', fontSize:18, fontWeight:700, marginBottom:12 },
-  modalBody: { fontSize:14, color:'var(--text-dim)', marginBottom:28, lineHeight:1.6 },
+  modalBody: { fontSize:14, color:'var(--text-dim)', marginBottom:24, lineHeight:1.6 },
   modalActions: { display:'flex', gap:12, justifyContent:'flex-end' },
-  modalCancel: { padding:'9px 20px', background:'transparent', border:'1px solid var(--border)', color:'var(--text)', borderRadius:9, cursor:'pointer', fontSize:14, fontFamily:'Instrument Sans, sans-serif' },
+  modalCancel:  { padding:'9px 20px', background:'transparent', border:'1px solid var(--border)', color:'var(--text)', borderRadius:9, cursor:'pointer', fontSize:14, fontFamily:'Instrument Sans, sans-serif' },
   modalConfirm: { padding:'9px 20px', background:'linear-gradient(135deg, #ef4444, #dc2626)', color:'#fff', border:'none', borderRadius:9, cursor:'pointer', fontSize:14, fontWeight:700, fontFamily:'Syne, sans-serif' },
 }

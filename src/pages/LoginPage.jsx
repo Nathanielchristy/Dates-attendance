@@ -103,8 +103,6 @@ export default function LoginPage() {
           {loading ? <span className="spinner" style={{width:16,height:16}} /> : 'Sign In'}
         </button>
 
-
-
         <div style={styles.securityNote}>
           🔒 Accounts lock for 15 min after 5 failed attempts
         </div>

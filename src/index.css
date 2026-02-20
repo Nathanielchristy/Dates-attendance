@@ -38,6 +38,12 @@ html, body, #root {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 3px; }
 
+/* Touch targets — all buttons/links at least 44px tall on mobile */
+@media (max-width: 767px) {
+  button { min-height: 40px; }
+  input, select { min-height: 44px; font-size: 16px !important; } /* 16px prevents iOS zoom */
+}
+
 /* Animations */
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(16px); }
